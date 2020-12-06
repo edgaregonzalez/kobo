@@ -1,0 +1,200 @@
+# Sync gateway pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-kobo
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.kobocat.replicas }}
+  selector:
+    matchLabels:
+      org.kobotoolbox.instance: {{ .Release.Name }}-kobo
+  template:
+    metadata:
+      annotations:
+        # Add a checksum to force the re-creation of the pods on every config update
+        # TODO: better checksum
+        checksum/config: {{ .Values | toString | sha256sum }}
+      labels:
+        org.kobotoolbox.instance: {{ .Release.Name }}-kobo
+    spec:
+      initContainers:
+      - name: wait-db
+        image: jwilder/dockerize
+        command:
+        - sh
+        - -c
+        - dockerize -timeout=40s -wait tcp://${KOBO_MONGO_HOST}:${KOBO_MONGO_PORT} -wait tcp://${POSTGRES_HOST}:${POSTGRES_PORT}
+        env:
+        {{ include "env_mongo" . | nindent 8 }}
+        {{ include "env_postgres" . | nindent 8 }}
+      # TODO: check that db is initialized?
+
+      # Copy settings from configmap to a volume, since it needs to be writable
+      - name: copy-config
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          cp /config-init/config.json /srv/src/enketo_express/config/
+        volumeMounts:
+        - name: enketo-config
+          mountPath: /config-init/config.json
+          subPath: config.json
+          readOnly: true
+        - name: persistence
+          subPath: enketo_express/config
+          mountPath: /srv/src/enketo_express/config
+
+      containers:
+      - name: kobocat
+        image: "{{ .Values.kobocat.image.name }}:{{ .Values.kobocat.image.tag }}"
+        # command:
+        # - sh
+        # - -c
+        # - cat
+        # tty: true
+        # TODO: wait for KPI container?
+        ports:
+        - containerPort: 8001
+        env:
+        {{ include "env_general" . | nindent 8 }}
+        {{ include "env_mongo" . | nindent 8 }}
+        {{ include "env_postgres" . | nindent 8 }}
+        {{ include "env_redis" . | nindent 8 }}
+        {{ include "env_externals" . | nindent 8 }}
+        {{ include "env_kobocat" . | nindent 8 }}
+        {{ include "env_uwsgi" "KC" | nindent 8 }}
+        - name: ENKETO_PROTOCOL
+          value: http
+        - name: KPI_PORT
+          value: '8002'
+        volumeMounts:
+        # Replace redundant init scripts with empty files
+        - name: config
+          mountPath: /etc/my_init.d/01_wait_for_mongo.bash
+          subPath: empty_script
+          readOnly: true
+        - name: config
+          mountPath: /etc/my_init.d/02_wait_for_postgres.bash
+          subPath: empty_script
+          readOnly: true
+        # - name: config
+        #   mountPath: /etc/my_init.d/03_wait_for_kpi.bash
+        #   subPath: empty_script
+        #   readOnly: true
+        # - name: config
+        #   mountPath: /srv/src/kobocat/docker/run_uwsgi_wrong_port_warning.bash
+        #   subPath: empty_script
+        #   readOnly: true
+        # - name: config
+        #   mountPath: /srv/src/kobocat/docker/dev_wrong_port_warning.py
+        #   subPath: dummy_script
+        #   readOnly: true
+        # Web server settings
+        - name: config
+          mountPath: /srv/src/kobocat/docker/kobocat.ini
+          subPath: kc_uwsgi.ini
+          readOnly: true
+        # Store uploaded media in PVC
+        - name: persistence
+          subPath: kobocat_media_uploads
+          mountPath: /srv/src/kobocat/media
+
+      - name: kpi
+        image: "{{ .Values.kpi.image.name }}:{{ .Values.kpi.image.tag }}"
+        env:
+        {{ include "env_general" . | nindent 8 }}
+        {{ include "env_mongo" . | nindent 8 }}
+        {{ include "env_postgres" . | nindent 8 }}
+        {{ include "env_redis" . | nindent 8 }}
+        {{ include "env_externals" . | nindent 8 }}
+        {{ include "env_kpi" . | nindent 8 }}
+        {{ include "env_uwsgi" "KPI" | nindent 8 }}
+        {{ include "env_smtp" . | nindent 8 }}
+        - name: SYNC_KOBOCAT_XFORMS
+          value: 'False'
+        ports:
+        - containerPort: 8002
+        volumeMounts:
+        # Override init scripts with empty ones
+        - name: config
+          subPath: empty_script
+          mountPath: /srv/init/wait_for_mongo.bash
+          readOnly: true
+        - name: config
+          subPath: empty_script
+          mountPath: /srv/init/wait_for_postgres.bash
+          readOnly: true
+        - name: config
+          subPath: empty_script
+          mountPath: /etc/profile.d/runtime_variables_kpi.source.bash.sh
+          readOnly: true
+        # Web server settings
+        - name: config
+          subPath: kpi_uwsgi.ini
+          mountPath: /srv/src/kpi/uwsgi.ini
+          readOnly: true
+
+      - name: enketo
+        image: "{{ .Values.enketo.image.name }}:{{ .Values.enketo.image.tag }}"
+        volumeMounts:
+        - name: persistence
+          subPath: enketo_express/config/config.json
+          mountPath: /srv/src/enketo_express/config/config.json
+        - name: kobo-icons
+          mountPath: /srv/src/enketo_express/public/images/favicon.ico
+          subPath: favicon.ico
+          readOnly: true
+        - name: kobo-icons
+          mountPath: /srv/src/enketo_express/public/images/icon_180x180.png
+          subPath: icon_180x180.png
+          readOnly: true
+        # To persist the result of the builds
+        - name: persistence
+          subPath: enketo_express/checksum
+          mountPath: /srv/src/enketo_express/checksum
+        - name: persistence
+          subPath: enketo_express/build/css
+          mountPath: /srv/src/enketo_express/public/css
+        - name: persistence
+          subPath: enketo_express/build/js
+          mountPath: /srv/src/enketo_express/public/js/build
+        - name: persistence
+          subPath: enketo_express/build/locales
+          mountPath: /srv/src/enketo_express/locales/build
+        ports:
+        - containerPort: 8005
+        env:
+        {{ include "env_general" . | nindent 8 }}
+        - name: ENKETO_BUILD_IE11
+          value: 'true'
+
+      # - name: sidecar
+      #   image: busybox
+      #   command:
+      #   - sh
+      #   - -c
+      #   - cat
+      #   tty: true
+      #   volumeMounts:
+      #   - name: persistence
+      #     subPath: kobocat_media_uploads
+      #     mountPath: /srv/src/kobocat/media
+
+      volumes:
+      - name: enketo-config
+        secret:
+          secretName: {{ .Release.Name }}-enketo
+      - name: config
+        configMap:
+          name: {{ .Release.Name }}-kobo
+          # Grant exec permissions
+          defaultMode: 0755
+      - name: kobo-icons
+        configMap:
+          name: {{ .Release.Name }}-icons
+      - name: persistence
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-kobo

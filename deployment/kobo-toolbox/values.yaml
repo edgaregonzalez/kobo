@@ -1,0 +1,88 @@
+# General
+
+kobocat:
+  image:
+    name: kobotoolbox/kobocat
+    tag: '2.020.49'
+  subdomain: kc
+
+kpi:
+  image:
+    name: kobotoolbox/kpi
+    tag: '2.020.30-hotfix-2908'
+  subdomain: kobo
+
+enketo:
+  image:
+    name: kobotoolbox/enketo-express-extra-widgets
+    tag: '2.3.10'
+  apiKey: WEHQJCXHJ2XOBXGOGMXCUJYXQP9ZZFVY4FHLCSKJIWAWPTCMGMECGNBCHXVBFCFT1H5TQTQCKB0J7DF2X23WC7EHOCCVQ7K8CY6QO9C8NMERACUM6S2QQEER
+  subdomain: ee
+
+general:
+  externalDomain: example.com
+  externalScheme: https
+  externalPort: 
+  djangoSecret: abc123
+  debug: false
+  superUser:
+    username: kobo
+    password: kobo
+  supportEmail: support@example.com
+
+external:
+  googleAnalyticsToken: 
+  ravenDSN:
+    kobocat: 
+    kpi: 
+    kpiJs:
+
+serviceType: ClusterIP
+
+smtp:
+  host: smtp.gmail.com
+  tls: 'true'
+  port: '587'
+  user: 
+  password: 
+  from: 
+
+redis-cache:
+  enabled: true
+  usePassword: false
+  cluster:
+    # disable slaves
+    enabled: false
+    slaveCount: 1
+
+redis-main:
+  enabled: true
+  usePassword: false
+  cluster:
+    # disable slaves
+    enabled: false
+    slaveCount: 1
+
+mongodb:
+  enabled: true
+  # See https://artifacthub.io/packages/helm/bitnami/mongodb for mongodb values doc
+  auth:
+    rootPassword: kobo
+    username: kobo
+    password: kobo
+    database: formhub
+
+postgresql:
+  enabled: true
+  kobocatDatabase: kobocat
+  kpiDatabase: koboform
+
+  # TODO: support external db
+
+  # Standard postgres chart values
+  # See https://artifacthub.io/packages/helm/bitnami/postgresql for docs
+  postgresqlPostgresPassword: admin
+  postgresqlUsername: kobo
+  postgresqlPassword: kobo
+
+  initdbScriptsConfigMap: kobo-postgres-init
