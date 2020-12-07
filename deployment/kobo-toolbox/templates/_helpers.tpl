@@ -122,7 +122,7 @@
 
 {{- define "env_externals" -}}
 - name: GOOGLE_ANALYTICS_TOKEN
-  value: {{ .Values.external.googleAnalyticsToken | quote }}
+  value: {{ .Values.external.google.analyticsToken | quote }}
 - name: KOBOCAT_RAVEN_DSN
   value: {{ .Values.external.ravenDSN.kobocat | quote }}
 - name: KPI_RAVEN_DSN

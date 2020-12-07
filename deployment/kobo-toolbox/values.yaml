@@ -16,14 +16,17 @@ enketo:
   image:
     name: kobotoolbox/enketo-express-extra-widgets
     tag: '2.3.10'
+  # Override those!
   apiKey: WEHQJCXHJ2XOBXGOGMXCUJYXQP9ZZFVY4FHLCSKJIWAWPTCMGMECGNBCHXVBFCFT1H5TQTQCKB0J7DF2X23WC7EHOCCVQ7K8CY6QO9C8NMERACUM6S2QQEER
+  encryptionKey: w0RkyuQSB33md8cZB5Xx
+  lessSecureEncryptionKey: wUNQWPwA3bDVzckKKtS4
   subdomain: ee
 
 general:
   externalDomain: example.com
   externalScheme: https
   externalPort: 
-  djangoSecret: abc123
+  djangoSecret: EKMvRtT2RFB3xDvFty4SVCsTyaQAHS9aA2mkRqtTp9zQYz48fp
   debug: false
   superUser:
     username: kobo
@@ -31,7 +34,9 @@ general:
   supportEmail: support@example.com
 
 external:
-  googleAnalyticsToken: 
+  google:
+    apiKey: 
+    analyticsToken: 
   ravenDSN:
     kobocat: 
     kpi: 

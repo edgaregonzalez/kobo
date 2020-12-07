@@ -5,8 +5,8 @@ metadata:
   name: {{ .Release.Name }}-enketo
   namespace: {{ .Release.Namespace }}
 stringData:
-  apiKey: {{ default (randAlphaNum 20) .Values.enketo.apiKey | quote }}
-  djangoSecret: {{ default (randAlphaNum 50) .Values.general.djangoSecret | quote }}
+  apiKey: {{ .Values.enketo.apiKey | quote }}
+  djangoSecret: {{ .Values.general.djangoSecret | quote }}
   config.json: |-
     {
       "app name": "Enketo Express for KoBo Toolbox",
@@ -15,8 +15,8 @@ stringData:
           "server url": "",
           "api key": "{{ .Values.enketo.apiKey }}"
       },
-      "encryption key": "{{ randAlphaNum 10 }}",
-      "less secure encryption key": "{{ randAlphaNum 10 }}",
+      "encryption key": "{{ Values.enketo.encryptionKey }}",
+      "less secure encryption key": "{{ Values.enketo.lessSecureEncryptionKey }}",
       "widgets": [
           "note",
           "select-desktop",
@@ -54,6 +54,7 @@ stringData:
           "cache": {
               "host": "{{ .Release.Name }}-redis-cache-master",
               {{- if .Values.redis-cache.usePassword }}
+              {{- /* TODO: escape? */}}
               "password": "{{ .Values.redis.password }}",
               {{- end}}
               "port": "6379"
@@ -61,15 +62,18 @@ stringData:
           "main": {
               "host": "{{ .Release.Name }}-redis-main-master",
               {{- if .Values.redis-main.usePassword }}
+              {{- /* TODO: escape? */}}
               "password": "{{ .Values.redis.password }}",
               {{- end}}
               "port": "6379"
           }
       },
         "google": {
-          "analytics": {
-              "ua": "",
-              "domain": ""
+            "api key": "{{ .Values.external.google.apiKey }}",
+            "analytics": {
+                "ua": "{{ .Values.external.google.analyticsToken }}",
+                "domain": "{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+            }
           }
       },
       "payload limit": "1mb",
