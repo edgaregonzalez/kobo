@@ -15,8 +15,8 @@ stringData:
           "server url": "",
           "api key": "{{ .Values.enketo.apiKey }}"
       },
-      "encryption key": "{{ Values.enketo.encryptionKey }}",
-      "less secure encryption key": "{{ Values.enketo.lessSecureEncryptionKey }}",
+      "encryption key": "{{ .Values.enketo.encryptionKey }}",
+      "less secure encryption key": "{{ .Values.enketo.lessSecureEncryptionKey }}",
       "widgets": [
           "note",
           "select-desktop",
@@ -52,19 +52,17 @@ stringData:
       ],
       "redis": {
           "cache": {
-              "host": "{{ .Release.Name }}-redis-cache-master",
-              {{- if .Values.redis-cache.usePassword }}
-              {{- /* TODO: escape? */}}
+              "host": "{{ .Release.Name }}-rediscache-master",
+              {{- if .Values.rediscache.usePassword }}
               "password": "{{ .Values.redis.password }}",
-              {{- end}}
+              {{- end }}
               "port": "6379"
           },
           "main": {
-              "host": "{{ .Release.Name }}-redis-main-master",
-              {{- if .Values.redis-main.usePassword }}
-              {{- /* TODO: escape? */}}
+              "host": "{{ .Release.Name }}-redismain-master",
+              {{- if .Values.redismain.usePassword }}
               "password": "{{ .Values.redis.password }}",
-              {{- end}}
+              {{- end }}
               "port": "6379"
           }
       },

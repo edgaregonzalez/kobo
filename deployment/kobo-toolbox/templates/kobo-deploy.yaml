@@ -71,7 +71,7 @@ spec:
         - name: ENKETO_PROTOCOL
           value: http
         - name: KPI_PORT
-          value: '8002'
+          value: '8000'
         volumeMounts:
         # Replace redundant init scripts with empty files
         - name: config
@@ -91,9 +91,9 @@ spec:
         #   subPath: empty_script
         #   readOnly: true
         # - name: config
-        #   mountPath: /srv/src/kobocat/docker/dev_wrong_port_warning.py
-        #   subPath: dummy_script
-        #   readOnly: true
+          mountPath: /srv/src/kobocat/docker/dev_wrong_port_warning.py
+          subPath: dev_wrong_port_warning.py
+          readOnly: true
         # Web server settings
         - name: config
           mountPath: /srv/src/kobocat/docker/kobocat.ini
@@ -118,7 +118,7 @@ spec:
         - name: SYNC_KOBOCAT_XFORMS
           value: 'False'
         ports:
-        - containerPort: 8002
+        - containerPort: 8000
         volumeMounts:
         # Override init scripts with empty ones
         - name: config

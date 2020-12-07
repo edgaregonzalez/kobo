@@ -102,16 +102,16 @@
 
 {{- define "env_redis" -}}
 - name: REDIS_SESSION_URL
-  value: "redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redis-cache-master:6379/2"
+  value: "redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/2"
 - name: REDIS_PASSWORD
   value: {{ .Values.redis.password | quote }}
 {{- end -}}
 
 {{- define "env_enketo" -}}
 - name: ENKETO_REDIS_MAIN_HOST
-  value: {{ .Release.Name }}-redis-main-master
+  value: {{ .Release.Name }}-redismain-master
 - name: ENKETO_REDIS_CACHE_HOST
-  value: {{ .Release.Name }}-redis-cache-master
+  value: {{ .Release.Name }}-rediscache-master
 - name: ENKETO_LINKED_FORM_AND_DATA_SERVER_SERVER_URL
   value: kobo.domain.name
 - name: ENKETO_LINKED_FORM_AND_DATA_SERVER_API_KEY
@@ -145,7 +145,7 @@
   value: Express
 
 - name: KOBOCAT_BROKER_URL
-  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redis-main-master:6379/2
+  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redismain-master:6379/2
 
 - name: KOBOCAT_CELERY_LOG_FILE
   value: /srv/logs/celery.log
@@ -200,7 +200,7 @@
 - name: KPI_PREFIX
   value: /
 - name: KPI_BROKER_URL
-  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redis-main-master:6379/1
+  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redismain-master:6379/1
 
 - name: KPI_MONGO_HOST
   value: {{ .Release.Name }}-mongodb

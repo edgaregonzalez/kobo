@@ -9,13 +9,13 @@ dependencies:
   - name: redis
     version: ~10.7.4
     repository: https://charts.bitnami.com/bitnami
-    condition: redis-main.enabled
-    alias: redis-main
+    condition: redismain.enabled
+    alias: redismain
   - name: redis
     version: ~10.7.4
     repository: https://charts.bitnami.com/bitnami
-    condition: redis-cache.enabled
-    alias: redis-cache
+    condition: rediscache.enabled
+    alias: rediscache
   - name: postgresql
     version: ~10.1.2
     repository: https://charts.bitnami.com/bitnami

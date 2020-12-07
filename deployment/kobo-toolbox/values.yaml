@@ -57,7 +57,7 @@ global:
   redis.password: brFdS9b7Xp
   storageClass: standard
 
-redis-cache:
+rediscache:
   enabled: true
   usePassword: true
   cluster:
@@ -65,7 +65,7 @@ redis-cache:
     enabled: false
     slaveCount: 1
 
-redis-main:
+redismain:
   enabled: true
   usePassword: true
   cluster:
