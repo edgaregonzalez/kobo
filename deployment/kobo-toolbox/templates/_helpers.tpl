@@ -1,3 +1,5 @@
+# WARNING: LOTS of duplication here, needs cleanup!
+
 {{- define "env_general" -}}
 # Choose between http or https
 - name: {{ .Values.general.externalScheme }}
@@ -100,7 +102,7 @@
 
 {{- define "env_redis" -}}
 - name: REDIS_SESSION_URL
-  value: "redis://{{ .Release.Name }}-redis-cache-master:6379/2"
+  value: "redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redis-cache-master:6379/2"
 - name: REDIS_PASSWORD
   value: {{ .Values.redis.password | quote }}
 {{- end -}}
@@ -143,7 +145,7 @@
   value: Express
 
 - name: KOBOCAT_BROKER_URL
-  value: redis://{{ .Release.Name }}-redis-main-master:6379/2
+  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redis-main-master:6379/2
 
 - name: KOBOCAT_CELERY_LOG_FILE
   value: /srv/logs/celery.log
@@ -158,7 +160,7 @@
 - name: KOBOFORM_URL
   value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
 - name: KOBOFORM_INTERNAL_URL
-  value: "http://localhost"
+  value: "http://localhost:8001"
 - name: KOBOCAT_URL
   value: "{{ .Values.general.externalScheme }}://{{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
 - name: ENKETO_URL
@@ -178,7 +180,7 @@
 - name: KPI_URL
   value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
 - name: KPI_INTERNAL_URL
-  value: "http://localhost:8002"
+  value: "http://localhost:8000"
 - name: DJANGO_DEBUG
   value: {{ .Values.general.debug | quote }}
 - name: RAVEN_DSN
@@ -198,7 +200,7 @@
 - name: KPI_PREFIX
   value: /
 - name: KPI_BROKER_URL
-  value: redis://{{ .Release.Name }}-redis-main-master:6379/1
+  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redis-main-master:6379/1
 
 - name: KPI_MONGO_HOST
   value: {{ .Release.Name }}-mongodb
@@ -225,11 +227,11 @@
 - name: ENKETO_URL
   value: "{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
 - name: ENKETO_INTERNAL_URL
-  value: "http://localhost"
+  value: "http://localhost:8005"
 - name: KOBOCAT_URL
   value: "{{ .Values.general.externalScheme }}://{{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
 - name: KOBOCAT_INTERNAL_URL
-  value: "http://localhost"
+  value: "http://localhost:8001"
 - name: SESSION_COOKIE_DOMAIN
   value: ".{{ .Values.general.externalDomain }}"
 - name: DJANGO_ALLOWED_HOSTS

@@ -5,7 +5,8 @@ metadata:
   name: {{ .Release.Name }}-kobo
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: {{ .Values.kobocat.replicas }}
+  # This pod can NOT be scaled, because it persists local files
+  replicas: 1
   selector:
     matchLabels:
       org.kobotoolbox.instance: {{ .Release.Name }}-kobo
@@ -48,6 +49,7 @@ spec:
           mountPath: /srv/src/enketo_express/config
 
       containers:
+      # All containers need to be in the same pod since they share some volumes
       - name: kobocat
         image: "{{ .Values.kobocat.image.name }}:{{ .Values.kobocat.image.tag }}"
         # command:

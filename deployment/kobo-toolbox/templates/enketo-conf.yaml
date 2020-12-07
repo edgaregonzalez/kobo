@@ -53,10 +53,16 @@ stringData:
       "redis": {
           "cache": {
               "host": "{{ .Release.Name }}-redis-cache-master",
+              {{- if .Values.redis-cache.usePassword }}
+              "password": "{{ .Values.redis.password }}",
+              {{- end}}
               "port": "6379"
           },
           "main": {
               "host": "{{ .Release.Name }}-redis-main-master",
+              {{- if .Values.redis-main.usePassword }}
+              "password": "{{ .Values.redis.password }}",
+              {{- end}}
               "port": "6379"
           }
       },

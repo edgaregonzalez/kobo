@@ -47,9 +47,12 @@ smtp:
   password: 
   from: 
 
+global:
+  redis.password: 6hangeMe
+
 redis-cache:
   enabled: true
-  usePassword: false
+  usePassword: true
   cluster:
     # disable slaves
     enabled: false
@@ -57,7 +60,7 @@ redis-cache:
 
 redis-main:
   enabled: true
-  usePassword: false
+  usePassword: true
   cluster:
     # disable slaves
     enabled: false
