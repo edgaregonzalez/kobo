@@ -32,6 +32,7 @@ general:
     username: kobo
     password: kobo
   supportEmail: support@example.com
+  storageSize: 10Gi
 
 external:
   google:
@@ -53,7 +54,8 @@ smtp:
   from: 
 
 global:
-  redis.password: 6hangeMe
+  redis.password: brFdS9b7Xp
+  storageClass: standard
 
 redis-cache:
   enabled: true
@@ -73,6 +75,8 @@ redis-main:
 
 mongodb:
   enabled: true
+  # TODO: support external db
+
   # See https://artifacthub.io/packages/helm/bitnami/mongodb for mongodb values doc
   auth:
     rootPassword: kobo
