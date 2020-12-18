@@ -144,7 +144,8 @@ spec:
         {{ include "env_smtp" . | nindent 8 }}
         - name: SYNC_KOBOCAT_XFORMS
           value: 'True'
-        C_FORCE_ROOT=true
+        - name: C_FORCE_ROOT
+          value: 'True'
 
         ports:
         # Using custom port since kobocat insists on using 8000
