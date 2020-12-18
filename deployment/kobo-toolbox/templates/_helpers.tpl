@@ -1,12 +1,24 @@
 # WARNING: LOTS of duplication here, needs cleanup!
 
+# TODO: move passwords to secrets
+
+{{- define "kc_dburl" -}}
+postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kobocatDatabase }}
+{{- end -}}
+
+{{- define "kpi_dburl" -}}
+postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kpiDatabase }}
+{{- end -}}
+
 {{- define "env_general" -}}
 # Choose between http or https
-- name: {{ .Values.general.externalScheme }}
+- name: PUBLIC_REQUEST_SCHEME
   value: {{ .Values.general.externalScheme | quote }}
 # The publicly-accessible domain where your KoBo Toolbox instance will be reached (e.g. example.com).
 - name: PUBLIC_DOMAIN_NAME
   value: {{ .Values.general.externalDomain }}
+- name: SESSION_COOKIE_DOMAIN
+  value: .{{ .Values.general.externalDomain }}
 # The private domain used in docker network. Useful for communication between containers without passing through
 # a load balancer. No need to be resolved by a public DNS.
 - name: INTERNAL_DOMAIN_NAME
@@ -41,10 +53,16 @@
 # To generate a secret key in the same way as `django-admin startproject` you can run:
 # docker-compose run --rm kpi python -c 'from django.utils.crypto import get_random_string; print(get_random_string(50, "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"))'
 - name: DJANGO_SECRET_KEY
-  value: {{ randAlphaNum 50 | upper | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-enketo
+      key: djangoSecret
 
 - name: ENKETO_ENCRYPTION_KEY
-  value: {{ randAlphaNum 120 | upper | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-enketo
+      key: encryptionKey
 
 # The initial superuser's username.
 - name: KOBO_SUPERUSER_USERNAME
@@ -56,6 +74,9 @@
 # The e-mail address where your users can contact you.
 - name: KOBO_SUPPORT_EMAIL
   value: {{ .Values.general.supportEmail | quote }}
+
+- name: BACKUPS_DIR
+  value: /srv/backups
 {{- end -}}
 
 {{- define "env_mongo" -}}
@@ -72,6 +93,29 @@
 - name: KOBO_MONGO_USERNAME
   value: {{ .Values.mongodb.auth.username | quote }}
 - name: KOBO_MONGO_PASSWORD
+  value: {{ .Values.mongodb.auth.password | quote }}
+
+# No idea why these need to be duplicated...
+- name: KOBOCAT_MONGO_HOST
+  value: {{ .Release.Name }}-mongodb
+- name: KOBOCAT_MONGO_PORT
+  value: '27017'
+- name: KOBOCAT_MONGO_NAME
+  value: {{ .Values.mongodb.auth.database | quote }}
+- name: KOBOCAT_MONGO_USER
+  value: {{ .Values.mongodb.auth.username | quote }}
+- name: KOBOCAT_MONGO_PASS
+  value: {{ .Values.mongodb.auth.password | quote }}
+
+- name: KPI_MONGO_HOST
+  value: {{ .Release.Name }}-mongodb
+- name: KPI_MONGO_PORT
+  value: '27017'
+- name: KPI_MONGO_NAME
+  value: {{ .Values.mongodb.auth.database | quote }}
+- name: KPI_MONGO_USER
+  value: {{ .Values.mongodb.auth.username | quote }}
+- name: KPI_MONGO_PASS
   value: {{ .Values.mongodb.auth.password | quote }}
 {{- end -}}
 
@@ -95,16 +139,18 @@
 
 # Postgres database used by kpi and kobocat Django apps
 - name: KC_DATABASE_URL
-  value: "postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kobocatDatabase }}"
+  value: {{ include "kc_dburl" . | quote }}
 - name: KPI_DATABASE_URL
-  value: "postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kpiDatabase }}"
+  value: {{ include "kpi_dburl" . | quote }}
 {{- end -}}
 
 {{- define "env_redis" -}}
 - name: REDIS_SESSION_URL
-  value: "redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/2"
+  value: "redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/2"
+- name: REDIS_LOCK_URL
+  value: "redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/3"
 - name: REDIS_PASSWORD
-  value: {{ .Values.redis.password | quote }}
+  value: {{ .Values.global.redis.password | quote }}
 {{- end -}}
 
 {{- define "env_enketo" -}}
@@ -145,7 +191,7 @@
   value: Express
 
 - name: KOBOCAT_BROKER_URL
-  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redismain-master:6379/2
+  value: redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-master:6379/2
 
 - name: KOBOCAT_CELERY_LOG_FILE
   value: /srv/logs/celery.log
@@ -153,7 +199,6 @@
 - name: ENKETO_OFFLINE_SURVEYS
   value: 'True'
 
-# Mongo credentials come from mongo.txt
 - name: KOBOCAT_MONGO_HOST
   value: {{ .Release.Name }}-mongodb
 
@@ -172,7 +217,7 @@
 
 # DATABASE
 - name: DATABASE_URL
-  value: "postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kobocatDatabase }}"
+  value: {{ include "kc_dburl" . | quote }}
 - name: POSTGRES_DB
   value: {{ .Values.postgresql.kobocatDatabase | quote }}
 
@@ -180,7 +225,7 @@
 - name: KPI_URL
   value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
 - name: KPI_INTERNAL_URL
-  value: "http://localhost:8000"
+  value: "http://localhost:8003"
 - name: DJANGO_DEBUG
   value: {{ .Values.general.debug | quote }}
 - name: RAVEN_DSN
@@ -200,7 +245,7 @@
 - name: KPI_PREFIX
   value: /
 - name: KPI_BROKER_URL
-  value: redis://:{{ .Values.redis.password }}@{{ .Release.Name }}-redismain-master:6379/1
+  value: redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-master:6379/1
 
 - name: KPI_MONGO_HOST
   value: {{ .Release.Name }}-mongodb
@@ -239,7 +284,7 @@
 
 # DATABASE
 - name: DATABASE_URL
-  value: "postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kpiDatabase }}"
+  value: {{ include "kpi_dburl" . | quote }}
 - name: POSTGRES_DB
   value: {{ .Values.postgresql.kpiDatabase | quote }}
 
@@ -284,4 +329,132 @@
   value: '120'
 - name: {{ . }}_UWSGI_WORKER_RELOAD_MERCY
   value: '120'
+- name: UWSGI_GROUP
+  value: wsgi
+- name: UWSGI_USER
+  value: wsgi
+{{- end -}}
+
+
+{{- define "nginx_conf" -}}
+charset     utf-8;
+
+# TODO: explore if we can use paths instead of subdomains...
+
+# Default configuration
+server {
+  listen 80 default_server;
+  listen [::]:80 default_server;
+
+  root /var/www/html;
+
+  # Add index.php to the list if you are using PHP
+  index index.html index.htm index.nginx-debian.html;
+
+  server_name $hostname;
+
+  location / {
+    # return empty response
+    return 204;
+  }
+
+  # Proxy ELB status
+  location ~ /elb/([^/]*)/(.*)$ {
+    resolver 127.0.0.1;
+    proxy_pass http://127.0.0.1/$2;
+    proxy_set_header Host $1;
+    proxy_intercept_errors on;
+    access_log  off;
+  }
+}
+
+# KoBoCAT HTTP.
+server {
+  listen      80;
+  server_name kc.kobo.local kc.docker.internal {{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }};
+
+  location / {
+    proxy_pass http://localhost:8001;
+    proxy_set_header Host $host:$proxy_port;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_redirect off;
+  }
+
+  location /static {
+    alias /srv/www/kobocat;
+  }
+
+  # media files
+  location /protected/ {
+    internal;
+    alias /media/;
+  }
+}
+
+# KoBoForm HTTP.
+server {
+  listen      80;
+  server_name kf.kobo.local kf.docker.internal {{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }};
+
+  location ~ ^/forms/(.*) {
+    return 301 /$1;
+  }
+
+  location /static {
+    alias /srv/www/kpi;
+
+    # gzip configs from here
+    # http://stackoverflow.com/a/12644530/3088435
+    gzip on;
+    gzip_disable "msie6";
+    gzip_comp_level 6;
+    gzip_min_length 1100;
+    gzip_buffers 16 8k;
+    gzip_proxied any;
+    gzip_types
+      text/plain
+      text/css
+      text/js
+      text/xml
+      text/javascript
+      application/javascript
+      application/x-javascript
+      application/json
+      application/xml
+      application/xml+rss;
+  }
+
+  location / {
+    proxy_pass http://localhost:8003;
+    proxy_set_header Host $host:$proxy_port;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_redirect off;
+  }
+}
+
+server {
+  listen 80;
+  server_name ee.kobo.local ee.docker.internal {{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }};
+
+  resolver 8.8.4.4 8.8.8.8 valid=300s;
+  resolver_timeout 10s;
+
+  # add_header Strict-Transport-Security max-age=63072000;
+  # add_header X-Frame-Options DENY;
+  add_header X-Content-Type-Options nosniff;
+
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto; # Needs ELB protocol
+
+  location / {
+    proxy_pass  http://localhost:8005/;
+    proxy_redirect off;
+  }
+}
 {{- end -}}

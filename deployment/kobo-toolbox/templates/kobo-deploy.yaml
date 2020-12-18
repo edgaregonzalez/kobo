@@ -16,6 +16,7 @@ spec:
         # Add a checksum to force the re-creation of the pods on every config update
         # TODO: better checksum
         checksum/config: {{ .Values | toString | sha256sum }}
+        checksum/nginx_conf: {{ include "nginx_conf" . | sha256sum }}
       labels:
         org.kobotoolbox.instance: {{ .Release.Name }}-kobo
     spec:
@@ -44,12 +45,25 @@ spec:
           mountPath: /config-init/config.json
           subPath: config.json
           readOnly: true
-        - name: persistence
-          subPath: enketo_express/config
+        - name: cache-volume
+          subPath: config
           mountPath: /srv/src/enketo_express/config
 
       containers:
-      # All containers need to be in the same pod since they share some volumes
+      # All containers need to be in the same pod since they share volumes!
+      # This also means they probably can't be scaled up... (?)
+      - name: nginx
+        image: nginx:1.19
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: persistence
+          subPath: static
+          mountPath: /srv/www
+        - name: persistence
+          subPath: kobocat_media_uploads
+          mountPath: /media
+
       - name: kobocat
         image: "{{ .Values.kobocat.image.name }}:{{ .Values.kobocat.image.tag }}"
         # command:
@@ -68,10 +82,11 @@ spec:
         {{ include "env_externals" . | nindent 8 }}
         {{ include "env_kobocat" . | nindent 8 }}
         {{ include "env_uwsgi" "KC" | nindent 8 }}
+        {{ include "env_smtp" . | nindent 8 }}
         - name: ENKETO_PROTOCOL
           value: http
         - name: KPI_PORT
-          value: '8000'
+          value: '8003'
         volumeMounts:
         # Replace redundant init scripts with empty files
         - name: config
@@ -91,9 +106,9 @@ spec:
         #   subPath: empty_script
         #   readOnly: true
         # - name: config
-          mountPath: /srv/src/kobocat/docker/dev_wrong_port_warning.py
-          subPath: dev_wrong_port_warning.py
-          readOnly: true
+        #   mountPath: /srv/src/kobocat/docker/dev_wrong_port_warning.py
+        #   subPath: dev_wrong_port_warning.py
+        #   readOnly: true
         # Web server settings
         - name: config
           mountPath: /srv/src/kobocat/docker/kobocat.ini
@@ -103,9 +118,21 @@ spec:
         - name: persistence
           subPath: kobocat_media_uploads
           mountPath: /srv/src/kobocat/media
+        - name: persistence
+          subPath: static/kobocat
+          mountPath: /srv/static
 
       - name: kpi
         image: "{{ .Values.kpi.image.name }}:{{ .Values.kpi.image.tag }}"
+        # Override entrypoint to redirect logs to stdout
+        command:
+        - sh
+        - -c
+        - |
+          touch /srv/logs/celery_beat.log && touch /srv/logs/celery.log && touch /srv/logs/celery_sync_kobocat_xforms.log
+          dockerize -stdout /srv/logs/celery_beat.log -stdout /srv/logs/celery.log -stdout /srv/logs/celery_sync_kobocat_xforms.log /srv/src/kpi/docker/init.bash
+        # - cat
+        # tty: true
         env:
         {{ include "env_general" . | nindent 8 }}
         {{ include "env_mongo" . | nindent 8 }}
@@ -116,9 +143,12 @@ spec:
         {{ include "env_uwsgi" "KPI" | nindent 8 }}
         {{ include "env_smtp" . | nindent 8 }}
         - name: SYNC_KOBOCAT_XFORMS
-          value: 'False'
+          value: 'True'
+        C_FORCE_ROOT=true
+
         ports:
-        - containerPort: 8000
+        # Using custom port since kobocat insists on using 8000
+        - containerPort: 8003
         volumeMounts:
         # Override init scripts with empty ones
         - name: config
@@ -138,13 +168,39 @@ spec:
           subPath: kpi_uwsgi.ini
           mountPath: /srv/src/kpi/uwsgi.ini
           readOnly: true
+        # www
+        - name: persistence
+          subPath: static/kpi
+          mountPath: /srv/static
+        # media
+        - name: persistence
+          subPath: kpi_media
+          mountPath: /srv/src/kpi/media
+        - name: persistence
+          subPath: kobocat_media_uploads
+          mountPath: /srv/src/kobocat/media
 
       - name: enketo
         image: "{{ .Values.enketo.image.name }}:{{ .Values.enketo.image.tag }}"
         volumeMounts:
-        - name: persistence
-          subPath: enketo_express/config/config.json
+        # Config
+        - name: cache-volume
+          subPath: config/config.json
           mountPath: /srv/src/enketo_express/config/config.json
+        # Cache build
+        - name: cache-volume
+          subPath: checksum
+          mountPath: /srv/src/enketo_express/checksum
+        - name: cache-volume
+          subPath: build/css
+          mountPath: /srv/src/enketo_express/public/css
+        - name: cache-volume
+          subPath: build/js
+          mountPath: /srv/src/enketo_express/public/js/build
+        - name: cache-volume
+          subPath: build/locales
+          mountPath: /srv/src/enketo_express/locales/build
+        # Custom icons
         - name: kobo-icons
           mountPath: /srv/src/enketo_express/public/images/favicon.ico
           subPath: favicon.ico
@@ -153,23 +209,9 @@ spec:
           mountPath: /srv/src/enketo_express/public/images/icon_180x180.png
           subPath: icon_180x180.png
           readOnly: true
-        # To persist the result of the builds
-        - name: persistence
-          subPath: enketo_express/checksum
-          mountPath: /srv/src/enketo_express/checksum
-        - name: persistence
-          subPath: enketo_express/build/css
-          mountPath: /srv/src/enketo_express/public/css
-        - name: persistence
-          subPath: enketo_express/build/js
-          mountPath: /srv/src/enketo_express/public/js/build
-        - name: persistence
-          subPath: enketo_express/build/locales
-          mountPath: /srv/src/enketo_express/locales/build
         ports:
         - containerPort: 8005
         env:
-        {{ include "env_general" . | nindent 8 }}
         - name: ENKETO_BUILD_IE11
           value: 'true'
 
@@ -186,6 +228,9 @@ spec:
       #     mountPath: /srv/src/kobocat/media
 
       volumes:
+      - name: nginx-config
+        configMap:
+          name: {{ .Release.Name }}-nginx
       - name: enketo-config
         secret:
           secretName: {{ .Release.Name }}-enketo
@@ -200,3 +245,5 @@ spec:
       - name: persistence
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}-kobo
+      - name: cache-volume
+        emptyDir: {}

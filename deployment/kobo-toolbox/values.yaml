@@ -3,13 +3,13 @@
 kobocat:
   image:
     name: kobotoolbox/kobocat
-    tag: '2.020.49'
+    tag: '2.020.50'
   subdomain: kc
 
 kpi:
   image:
     name: kobotoolbox/kpi
-    tag: '2.020.30-hotfix-2908'
+    tag: '2.020.51'
   subdomain: kobo
 
 enketo:
@@ -33,6 +33,7 @@ general:
     password: kobo
   supportEmail: support@example.com
   storageSize: 10Gi
+  serviceType: ClusterIP
 
 external:
   google:
@@ -43,8 +44,6 @@ external:
     kpi: 
     kpiJs:
 
-serviceType: ClusterIP
-
 smtp:
   host: smtp.gmail.com
   tls: 'true'
@@ -54,7 +53,8 @@ smtp:
   from: 
 
 global:
-  redis.password: brFdS9b7Xp
+  redis:
+    password: brFdS9b7Xp
   storageClass: standard
 
 rediscache:
@@ -83,6 +83,7 @@ mongodb:
     username: kobo
     password: kobo
     database: formhub
+  initdbScriptsConfigMap: kobo-mongo-init
 
 postgresql:
   enabled: true
@@ -96,5 +97,4 @@ postgresql:
   postgresqlPostgresPassword: admin
   postgresqlUsername: kobo
   postgresqlPassword: kobo
-
   initdbScriptsConfigMap: kobo-postgres-init

@@ -8,8 +8,11 @@ spec:
   selector:
     org.kobotoolbox.instance: {{ .Release.Name }}-kobo
   ports:
-  - targetPort: 8000
-    port: 8000
+  - targetPort: 80
+    port: 80
+    name: www
+  - targetPort: 8003
+    port: 8003
     name: kpi
   - targetPort: 8001
     port: 8001
@@ -17,4 +20,4 @@ spec:
   - targetPort: 8005
     port: 8005
     name: enketo
-  type: {{ .Values.serviceType }}
+  type: {{ .Values.general.serviceType }}

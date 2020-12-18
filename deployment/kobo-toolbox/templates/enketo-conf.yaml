@@ -6,93 +6,96 @@ metadata:
   namespace: {{ .Release.Namespace }}
 stringData:
   apiKey: {{ .Values.enketo.apiKey | quote }}
+  encryptionKey: {{ .Values.enketo.encryptionKey | quote }}
   djangoSecret: {{ .Values.general.djangoSecret | quote }}
   config.json: |-
     {
       "app name": "Enketo Express for KoBo Toolbox",
       "linked form and data server": {
-          "name": "KoBo Toolbox",
-          "server url": "",
-          "api key": "{{ .Values.enketo.apiKey }}"
+        "name": "KoBo Toolbox",
+        "server url": "",
+        "api key": "{{ .Values.enketo.apiKey }}"
       },
       "encryption key": "{{ .Values.enketo.encryptionKey }}",
       "less secure encryption key": "{{ .Values.enketo.lessSecureEncryptionKey }}",
       "widgets": [
-          "note",
-          "select-desktop",
-          "select-mobile",
-          "autocomplete",
-          "geo",
-          "textarea",
-          "url",
-          "table",
-          "radio",
-          "date",
-          "time",
-          "datetime",
-          "select-media",
-          "file",
-          "draw",
-          "rank",
-          "likert",
-          "range",
-          "columns",
-          "image-view",
-          "comment",
-          "image-map",
-          "date-native",
-          "date-native-ios",
-          "date-mobile",
-          "text-max",
-          "text-print",
-          "rating",
-          "thousands-sep",
-          "../../../node_modules/enketo-image-customization-widget/image-customization",
-          "../../../node_modules/enketo-literacy-test-widget/literacywidget"
+        "note",
+        "select-desktop",
+        "select-mobile",
+        "autocomplete",
+        "geo",
+        "textarea",
+        "url",
+        "table",
+        "radio",
+        "date",
+        "time",
+        "datetime",
+        "select-media",
+        "file",
+        "draw",
+        "rank",
+        "likert",
+        "range",
+        "columns",
+        "image-view",
+        "comment",
+        "image-map",
+        "date-native",
+        "date-native-ios",
+        "date-mobile",
+        "text-max",
+        "text-print",
+        "rating",
+        "thousands-sep",
+        "../../../node_modules/enketo-image-customization-widget/image-customization",
+        "../../../node_modules/enketo-literacy-test-widget/literacywidget"
       ],
       "redis": {
-          "cache": {
-              "host": "{{ .Release.Name }}-rediscache-master",
-              {{- if .Values.rediscache.usePassword }}
-              "password": "{{ .Values.redis.password }}",
-              {{- end }}
-              "port": "6379"
-          },
-          "main": {
-              "host": "{{ .Release.Name }}-redismain-master",
-              {{- if .Values.redismain.usePassword }}
-              "password": "{{ .Values.redis.password }}",
-              {{- end }}
-              "port": "6379"
-          }
+        "cache": {
+          "host": "{{ .Release.Name }}-rediscache-master",
+          {{- if .Values.rediscache.usePassword }}
+          "password": "{{ .Values.global.redis.password }}",
+          {{- end }}
+          "port": "6379"
+        },
+        "main": {
+          "host": "{{ .Release.Name }}-redismain-master",
+          {{- if .Values.redismain.usePassword }}
+          "password": "{{ .Values.global.redis.password }}",
+          {{- end }}
+          "port": "6379"
+        }
       },
-        "google": {
-            "api key": "{{ .Values.external.google.apiKey }}",
-            "analytics": {
-                "ua": "{{ .Values.external.google.analyticsToken }}",
-                "domain": "{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
-            }
-          }
+      "google": {
+        "api key": "{{ .Values.external.google.apiKey }}",
+        "analytics": {
+          "ua": "{{ .Values.external.google.analyticsToken }}",
+          "domain": "{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+        }
       },
       "payload limit": "1mb",
       "text field character limit": 1000000,
       "maps": [
-          {
-              "name": "humanitarian",
-              "tiles": [ "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png" ],
-              "attribution": "&copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> & <a href=\"https://www.hotosm.org/updates/2013-09-29_a_new_window_on_openstreetmap_data\">Yohan Boniface & Humanitarian OpenStreetMap Team</a> | <a href=\"https://www.openstreetmap.org/copyright\">Terms</a>"
-          }, {
-              "name": "satellite",
-              "tiles": [ "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" ],
-              "attribution": "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-          }, {
-              "name": "terrain",
-              "tiles": [ "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" ],
-              "attribution": "&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap</a> | <a href=\"https://www.openstreetmap.org/copyright\">Terms</a>"
-          }, {
-              "name": "streets",
-              "tiles": [ "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" ],
-              "attribution": "&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap</a> | <a href=\"https://www.openstreetmap.org/copyright\">Terms</a>"
-          }
+        {
+          "name": "humanitarian",
+          "tiles": [ "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png" ],
+          "attribution": "&copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> & <a href=\"https://www.hotosm.org/updates/2013-09-29_a_new_window_on_openstreetmap_data\">Yohan Boniface & Humanitarian OpenStreetMap Team</a> | <a href=\"https://www.openstreetmap.org/copyright\">Terms</a>"
+        },
+        {
+          "name": "satellite",
+          "tiles": [ "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" ],
+          "attribution": "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+        },
+        {
+          "name": "terrain",
+          "tiles": [ "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" ],
+          "attribution": "&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap</a> | <a href=\"https://www.openstreetmap.org/copyright\">Terms</a>"
+        },
+        {
+          "name": "streets",
+          "tiles": [ "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" ],
+          "attribution": "&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap</a> | <a href=\"https://www.openstreetmap.org/copyright\">Terms</a>"
+        }
       ]
     }

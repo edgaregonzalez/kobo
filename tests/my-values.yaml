@@ -1,0 +1,26 @@
+smtp:
+  user: yann.jouanique@gmail.com
+  password: toto
+  from: yann.jouanique@gmail.com
+
+global:
+  redis:
+    password: tata
+
+mongodb:
+  auth:
+    rootPassword: titi
+    password: tutu
+  service:
+    type: NodePort
+
+postgresql:
+  postgresqlPostgresPassword: tyty
+  postgresqlUsername: postgres
+  postgresqlPassword: tyty
+  service:
+    type: NodePort
+
+general:
+  debug: 'False'
+  serviceType: NodePort

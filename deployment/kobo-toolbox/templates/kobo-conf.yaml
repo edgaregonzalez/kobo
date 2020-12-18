@@ -9,7 +9,7 @@ data:
 
     # directory structure
     chdir       = $(KPI_SRC_DIR)
-    logto       = $(KPI_LOGS_DIR)/uwsgi.log
+    # logto       = $(KPI_LOGS_DIR)/uwsgi.log
 
     # Run the application at a non-root URL path, e.g. http://hostname/KPI_PREFIX.
     # See http://uwsgi-docs.readthedocs.org/en/latest/Nginx.html#hosting-multiple-apps-in-the-same-process-aka-managing-script-name-and-path-info
@@ -24,7 +24,7 @@ data:
     worker-reload-mercy = $(KPI_UWSGI_WORKER_RELOAD_MERCY)
 
     # monitoring (use with `uwsgitop :1717`, for example)
-    stats = :1717
+    stats = :1818
     memory-report = true
 
     # Overrideable default of 2 uWSGI processes.
@@ -65,7 +65,7 @@ data:
     reload-on-rss = 512
     endif =
 
-    socket          = 0.0.0.0:8000
+    socket          = 0.0.0.0:8003
     buffer-size     = 32768
     listen          = @(/proc/sys/net/core/somaxconn)
 
@@ -85,7 +85,7 @@ data:
     # directory structure
     chdir           = $(KOBOCAT_SRC_DIR)
     module          = onadata.apps.main.wsgi
-    logto           = $(KOBOCAT_LOGS_DIR)/uwsgi.log
+    # logto           = $(KOBOCAT_LOGS_DIR)/uwsgi.log
 
     # process related settings
     master              = true
@@ -149,30 +149,4 @@ data:
   empty_script: |
     #!/bin/bash
     set -e
-    echo Skipping
-  # Override wrong port server to a different port...
-  dev_wrong_port_warning.py: |
-    #!/usr/bin/env python
-
-    """
-    Per kobotoolbox/kobo-docker#301, we have changed the uWSGI port to 8001. This
-    provides a helpful message to anyone still trying to use port 8000
-    """
-
-    import BaseHTTPServer
-    import sys
-
-    class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
-        def do_GET(self):
-            self.send_response(503)
-            self.end_headers()
-            self.wfile.write(
-                'Your development environment is trying to connect to the KoBoCAT '
-                'container on port 8000 instead of 8001. Please change this. See '
-                'https://github.com/kobotoolbox/kobo-docker/issues/301 '
-                'for more details.'
-            )
-
-    server_address = ('', 8002)
-    httpd = BaseHTTPServer.HTTPServer(server_address, Handler)
-    httpd.serve_forever()
+    echo Skipping $0
