@@ -71,11 +71,6 @@ spec:
         image: nginx:1.19
         volumeMounts:
         # Config
-        - name: nginx-base
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
-        - name: nginx-includes
-          mountPath: /etc/nginx/includes
         - name: nginx-confd
           mountPath: /etc/nginx/conf.d
         # empty init dir
@@ -249,15 +244,9 @@ spec:
           value: 'true'
 
       volumes:
-      - name: nginx-base
-        configMap:
-          name: {{ .Release.Name }}-nginx-base
       - name: nginx-confd
         configMap:
           name: {{ .Release.Name }}-nginx-confd
-      - name: nginx-includes
-        configMap:
-          name: {{ .Release.Name }}-nginx-includes
       - name: enketo-config
         secret:
           secretName: {{ .Release.Name }}-enketo

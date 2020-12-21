@@ -424,6 +424,8 @@ redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-maste
 
 {{- define "nginx_conf" -}}
 charset     utf-8;
+gzip on;
+gzip_disable "msie6";
 
 # TODO: explore if we can use paths instead of subdomains...?
 
@@ -459,7 +461,10 @@ server {
   listen      80;
   server_name {{ .Values.kobocat.subdomain }}.{{ include "internal_domain" . }} {{ .Values.kobocat.subdomain }}.docker.internal {{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }};
 
-  include /etc/nginx/includes/server_directive_common.conf;
+  # Allow 100M upload
+  client_max_body_size 100M;
+  # Support bigger headers. Useful for huge cookies
+  large_client_header_buffers 8 16k;
 
   location / {
     uwsgi_read_timeout 130;
@@ -544,6 +549,11 @@ server {
 
   resolver 8.8.4.4 8.8.8.8 valid=300s;
   resolver_timeout 10s;
+
+  # Allow 100M upload
+  client_max_body_size 100M;
+  # Support bigger headers. Useful for huge cookies
+  large_client_header_buffers 8 16k;
 
   # add_header Strict-Transport-Security max-age=63072000;
   # add_header X-Frame-Options DENY;

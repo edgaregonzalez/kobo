@@ -5,7 +5,9 @@ metadata:
   name: {{ .Release.Name }}-kobo
   namespace: {{ .Release.Namespace }}
   annotations:
-  {{- .Values.ingress.annotations | toYaml | nindent 4 }}
+    # Enable large media uploads
+    nginx.ingress.kubernetes.io/proxy-body-size: 100M
+    {{- .Values.ingress.annotations | toYaml | nindent 4 }}
 spec:
   # The kobo sidecar nginx will do further host-based routing...
   rules:
