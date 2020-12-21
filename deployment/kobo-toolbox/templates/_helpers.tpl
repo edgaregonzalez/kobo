@@ -10,6 +10,30 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kpiDatabase }}
 {{- end -}}
 
+{{- define "internal_domain" -}}
+kobo.local
+{{- end -}}
+
+{{- define "boolean2str" -}}
+{{ . | ternary "True" "False" }}
+{{- end -}}
+
+# TODO... define external port only if non-standard 80/443
+{{- define "external_port" -}}
+{{- end -}}
+
+{{- define "kpi_url" -}}
+{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ include "external_port" . }}
+{{- end -}}
+
+{{- define "kobocat_url" -}}
+{{ .Values.general.externalScheme }}://{{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }}{{ include "external_port" . }}
+{{- end -}}
+
+{{- define "enketo_url" -}}
+{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ include "external_port" . }}
+{{- end -}}
+
 {{- define "env_general" -}}
 # Choose between http or https
 - name: PUBLIC_REQUEST_SCHEME
@@ -22,7 +46,7 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 # The private domain used in docker network. Useful for communication between containers without passing through
 # a load balancer. No need to be resolved by a public DNS.
 - name: INTERNAL_DOMAIN_NAME
-  value: localhost
+  value: {{ include "internal_domain" . }}
 # The publicly-accessible subdomain for the KoBoForm form building and management interface (e.g. koboform).
 - name: KOBOFORM_PUBLIC_SUBDOMAIN
   value: {{ .Values.kpi.subdomain }}
@@ -77,6 +101,9 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 
 - name: BACKUPS_DIR
   value: /srv/backups
+
+- name: DJANGO_ALLOWED_HOSTS
+  value: ".{{ .Values.general.externalDomain }} .{{ include "internal_domain" . }} localhost"
 {{- end -}}
 
 {{- define "env_mongo" -}}
@@ -159,7 +186,7 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 - name: ENKETO_REDIS_CACHE_HOST
   value: {{ .Release.Name }}-rediscache-master
 - name: ENKETO_LINKED_FORM_AND_DATA_SERVER_SERVER_URL
-  value: kobo.domain.name
+  value: "{{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }}"
 - name: ENKETO_LINKED_FORM_AND_DATA_SERVER_API_KEY
   value: {{ .Values.enketo.apiKey | quote }}
 - name: ENKETO_SUPPORT_EMAIL
@@ -179,9 +206,9 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 
 {{- define "env_kobocat" -}}
 - name: KOBOCAT_DJANGO_DEBUG
-  value: {{ .Values.general.debug | quote }}
+  value: {{ include "boolean2str" .Values.general.debug | quote }}
 - name: TEMPLATE_DEBUG
-  value: {{ .Values.general.debug | quote }}
+  value: {{ include "boolean2str" .Values.general.debug | quote }}
 - name: USE_X_FORWARDED_HOST
   value: 'False'
 
@@ -203,17 +230,13 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
   value: {{ .Release.Name }}-mongodb
 
 - name: KOBOFORM_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "kpi_url" . | quote }}
 - name: KOBOFORM_INTERNAL_URL
-  value: "http://localhost:8001"
+  value: "http://{{ .Values.kpi.subdomain }}.{{ include "internal_domain" . }}"
 - name: KOBOCAT_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "kobocat_url" . | quote }}
 - name: ENKETO_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
-- name: SESSION_COOKIE_DOMAIN
-  value: ".{{ .Values.general.externalDomain }}"
-- name: DJANGO_ALLOWED_HOSTS
-  value: ".{{ .Values.general.externalDomain }} localhost"
+  value: {{ include "enketo_url" . | quote }}
 
 # DATABASE
 - name: DATABASE_URL
@@ -223,20 +246,20 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 
 # OTHER
 - name: KPI_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "kpi_url" . | quote }}
 - name: KPI_INTERNAL_URL
-  value: "http://localhost:8003"
+  value: "http://{{ .Values.kpi.subdomain }}.{{ include "internal_domain" . }}"
 - name: DJANGO_DEBUG
-  value: {{ .Values.general.debug | quote }}
+  value: {{ include "boolean2str" .Values.general.debug | quote }}
 - name: RAVEN_DSN
   value: {{ .Values.external.ravenDSN.kobocat | quote }}
 {{- end -}}
 
 {{- define "env_kpi" -}}
 - name: KPI_DJANGO_DEBUG
-  value: {{ .Values.general.debug | quote }}
+  value: {{ include "boolean2str" .Values.general.debug | quote }}
 - name: TEMPLATE_DEBUG
-  value: {{ .Values.general.debug | quote }}
+  value: {{ include "boolean2str" .Values.general.debug | quote }}
 - name: USE_X_FORWARDED_HOST
   value: 'False'
 
@@ -268,19 +291,15 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
   value: http://support.kobotoolbox.org/
 
 - name: KOBOFORM_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "kpi_url" . | quote }}
 - name: ENKETO_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "enketo_url" . | quote }}
 - name: ENKETO_INTERNAL_URL
   value: "http://localhost:8005"
 - name: KOBOCAT_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "kobocat_url" . | quote }}
 - name: KOBOCAT_INTERNAL_URL
-  value: "http://localhost:8001"
-- name: SESSION_COOKIE_DOMAIN
-  value: ".{{ .Values.general.externalDomain }}"
-- name: DJANGO_ALLOWED_HOSTS
-  value: ".{{ .Values.general.externalDomain }} localhost"
+  value: "http://{{ .Values.kobocat.subdomain }}.{{ include "internal_domain" . }}"
 
 # DATABASE
 - name: DATABASE_URL
@@ -290,13 +309,13 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 
 # OTHER
 - name: DJANGO_DEBUG
-  value: {{ .Values.general.debug | quote }}
+  value: {{ include "boolean2str" .Values.general.debug | quote }}
 - name: RAVEN_DSN
   value: {{ .Values.external.ravenDSN.kpi | quote }}
 - name: RAVEN_JS_DSN
   value: {{ .Values.external.ravenDSN.kpiJs | quote }}
 - name: KPI_URL
-  value: "{{ .Values.general.externalScheme }}://{{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }}{{ .Values.general.publicPort }}"
+  value: {{ include "kpi_url" . | quote }}
 {{- end -}}
 
 {{- define "env_smtp" -}}
@@ -311,7 +330,7 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 - name: EMAIL_HOST_PASSWORD
   value: {{ .Values.smtp.password | quote }}
 - name: EMAIL_USE_TLS
-  value: {{ .Values.smtp.tls | quote }}
+  value: {{ include "boolean2str" .Values.smtp.tls | quote }}
 - name: DEFAULT_FROM_EMAIL
   value: {{ .Values.smtp.from | quote }}
 {{- end -}}
@@ -339,7 +358,7 @@ postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.post
 {{- define "nginx_conf" -}}
 charset     utf-8;
 
-# TODO: explore if we can use paths instead of subdomains...
+# TODO: explore if we can use paths instead of subdomains...?
 
 # Default configuration
 server {
@@ -371,15 +390,23 @@ server {
 # KoBoCAT HTTP.
 server {
   listen      80;
-  server_name kc.kobo.local kc.docker.internal {{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }};
+  server_name {{ .Values.kobocat.subdomain }}.{{ include "internal_domain" . }} {{ .Values.kobocat.subdomain }}.docker.internal {{ .Values.kobocat.subdomain }}.{{ .Values.general.externalDomain }};
+
+  include /etc/nginx/includes/server_directive_common.conf;
 
   location / {
-    proxy_pass http://localhost:8001;
-    proxy_set_header Host $host:$proxy_port;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_redirect off;
+    uwsgi_read_timeout 130;
+    uwsgi_send_timeout 130;
+    uwsgi_pass localhost:8001;
+    # For setting HTTP headers, see http://stackoverflow.com/a/14133533/1877326.
+    uwsgi_param HTTP_X_REAL_IP $remote_addr;
+    uwsgi_param HTTP_X_FORWARDED_FOR $remote_addr;
+    # uwsgi_param HTTP_X_FORWARDED_PROTO $scheme;
+    include /etc/nginx/uwsgi_params;
+
+    # Support longer query strings. See issue #147
+    uwsgi_buffers 8 16k;
+    uwsgi_buffer_size 16k;
   }
 
   location /static {
@@ -396,7 +423,7 @@ server {
 # KoBoForm HTTP.
 server {
   listen      80;
-  server_name kf.kobo.local kf.docker.internal {{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }};
+  server_name {{ .Values.kpi.subdomain }}.{{ include "internal_domain" . }} {{ .Values.kpi.subdomain }}.docker.internal {{ .Values.kpi.subdomain }}.{{ .Values.general.externalDomain }};
 
   location ~ ^/forms/(.*) {
     return 301 /$1;
@@ -426,19 +453,27 @@ server {
       application/xml+rss;
   }
 
+  error_page 418 = /static/html/Offline.html;
+
   location / {
-    proxy_pass http://localhost:8003;
-    proxy_set_header Host $host:$proxy_port;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_redirect off;
+    uwsgi_read_timeout 130;
+    uwsgi_send_timeout 130;
+    uwsgi_pass localhost:8003;
+    # For setting HTTP headers, see http://stackoverflow.com/a/14133533/1877326.
+    uwsgi_param HTTP_X_REAL_IP $remote_addr;
+    uwsgi_param HTTP_X_FORWARDED_FOR $remote_addr;
+    # uwsgi_param HTTP_X_FORWARDED_PROTO $scheme;
+    include /etc/nginx/uwsgi_params;
+
+    # Support longer query strings. See issue #147
+    uwsgi_buffers 8 16k;
+    uwsgi_buffer_size 16k;
   }
 }
 
 server {
   listen 80;
-  server_name ee.kobo.local ee.docker.internal {{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }};
+  server_name {{ .Values.enketo.subdomain }}.{{ include "internal_domain" . }} {{ .Values.enketo.subdomain }}.docker.internal {{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }};
 
   resolver 8.8.4.4 8.8.8.8 valid=300s;
   resolver_timeout 10s;

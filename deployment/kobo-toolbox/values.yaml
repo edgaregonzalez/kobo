@@ -11,6 +11,8 @@ kpi:
     name: kobotoolbox/kpi
     tag: '2.020.51'
   subdomain: kobo
+  # Background image override (base64 encoded)
+  signupPhoto: 
 
 enketo:
   image:
@@ -24,7 +26,7 @@ enketo:
 
 general:
   externalDomain: example.com
-  externalScheme: https
+  externalScheme: http
   externalPort: 
   djangoSecret: EKMvRtT2RFB3xDvFty4SVCsTyaQAHS9aA2mkRqtTp9zQYz48fp
   debug: false
@@ -34,6 +36,12 @@ general:
   supportEmail: support@example.com
   storageSize: 10Gi
   serviceType: ClusterIP
+  # set this to true in order to force internal resolution of external domains. Useful for troubleshooting, but won't work if the schemes are different...
+  forceInternal: false
+
+ingress:
+  enabled: false
+  annotations: {}
 
 external:
   google:
@@ -46,7 +54,7 @@ external:
 
 smtp:
   host: smtp.gmail.com
-  tls: 'true'
+  tls: true
   port: '587'
   user: 
   password: 
