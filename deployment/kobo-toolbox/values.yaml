@@ -1,28 +1,33 @@
-# General
-
+# kobocat is the standard OpenRosa form server that form filling apps will connect to
 kobocat:
   image:
+    # We're using an immutable tag here to avoid surprises
+    # see https://hub.docker.com/r/kobotoolbox/kobocat for latest tags
     name: kobotoolbox/kobocat
     tag: '2.020.50'
   subdomain: kc
 
+# kpi is the main Kobotoolbox UI
 kpi:
   image:
+    # See https://hub.docker.com/r/kobotoolbox/kpi
     name: kobotoolbox/kpi
     tag: '2.020.51'
   subdomain: kobo
   # Background image override (base64 encoded)
   signupPhoto: 
 
+# Enketo is the web-based form preview and filling UI
 enketo:
   image:
+    # See https://hub.docker.com/r/kobotoolbox/enketo-express-extra-widgets
     name: kobotoolbox/enketo-express-extra-widgets
     tag: '2.3.10'
+  subdomain: ee
   # Override those!
   apiKey: WEHQJCXHJ2XOBXGOGMXCUJYXQP9ZZFVY4FHLCSKJIWAWPTCMGMECGNBCHXVBFCFT1H5TQTQCKB0J7DF2X23WC7EHOCCVQ7K8CY6QO9C8NMERACUM6S2QQEER
   encryptionKey: w0RkyuQSB33md8cZB5Xx
   lessSecureEncryptionKey: wUNQWPwA3bDVzckKKtS4
-  subdomain: ee
 
 general:
   externalDomain: example.com
@@ -30,13 +35,15 @@ general:
   externalPort: 
   djangoSecret: EKMvRtT2RFB3xDvFty4SVCsTyaQAHS9aA2mkRqtTp9zQYz48fp
   debug: false
+  # This user will have access to kobotoolbox UI but also the built-in Django admin interface (/admin)
   superUser:
     username: kobo
     password: kobo
   supportEmail: support@example.com
   storageSize: 10Gi
   serviceType: ClusterIP
-  # set this to true in order to force internal resolution of external domains. Useful for troubleshooting, but won't work if the schemes are different...
+  # set this to true in order to force internal resolution of external domains.
+  # Useful for troubleshooting, but won't work if the schemes are different...
   forceInternal: false
 
 ingress:
@@ -62,7 +69,9 @@ smtp:
 
 global:
   redis:
+    # Override this!
     password: brFdS9b7Xp
+  # Will be used by this and all subcharts
   storageClass: standard
 
 rediscache:
@@ -84,6 +93,7 @@ redismain:
 mongodb:
   enabled: true
   # TODO: support external db
+  # For now we only support a db installed with a subchart
 
   # See https://artifacthub.io/packages/helm/bitnami/mongodb for mongodb values doc
   auth:
@@ -99,10 +109,12 @@ postgresql:
   kpiDatabase: koboform
 
   # TODO: support external db
+  # For now we only support a db installed with a subchart
 
   # Standard postgres chart values
   # See https://artifacthub.io/packages/helm/bitnami/postgresql for docs
+  # WARNING! It seems that the migration scripts require the db user to be a superuser... so we're using postgres user here
   postgresqlPostgresPassword: admin
-  postgresqlUsername: kobo
-  postgresqlPassword: kobo
+  postgresqlUsername: postgres
+  postgresqlPassword: admin
   initdbScriptsConfigMap: kobo-postgres-init

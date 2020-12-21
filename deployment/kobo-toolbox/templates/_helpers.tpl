@@ -1,6 +1,6 @@
 # WARNING: LOTS of duplication here, needs cleanup!
 
-# TODO: move passwords to secrets
+# TODO: move passwords to secrets...
 
 {{- define "kc_dburl" -}}
 postgis://{{ .Values.postgresql.postgresqlUsername }}:{{ .Values.postgresql.postgresqlPassword }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.kobocatDatabase }}
@@ -34,6 +34,22 @@ kobo.local
 {{ .Values.general.externalScheme }}://{{ .Values.enketo.subdomain }}.{{ .Values.general.externalDomain }}{{ include "external_port" . }}
 {{- end -}}
 
+{{- define "redis_url_session" -}}
+redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/2
+{{- end -}}
+
+{{- define "redis_url_lock" -}}
+redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/3
+{{- end -}}
+
+{{- define "redis_url_kobobroker" -}}
+redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-master:6379/2
+{{- end -}}
+
+{{- define "redis_url_kpibroker" -}}
+redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-master:6379/1
+{{- end -}}
+
 {{- define "env_general" -}}
 # Choose between http or https
 - name: PUBLIC_REQUEST_SCHEME
@@ -65,12 +81,12 @@ kobo.local
 - name: ENKETO_API_KEY
   valueFrom:
     secretKeyRef:
-      name: {{ .Release.Name }}-enketo
+      name: {{ .Release.Name }}-secrets
       key: apiKey
 - name: ENKETO_API_TOKEN
   valueFrom:
     secretKeyRef:
-      name: {{ .Release.Name }}-enketo
+      name: {{ .Release.Name }}-secrets
       key: apiKey
 
 # Canonically a 50-character random string. For Django 1.8.13, see https://docs.djangoproject.com/en/1.8/ref/settings/#secret-key and https://github.com/django/django/blob/4022b2c306e88a4ab7f80507e736ce7ac7d01186/django/core/management/commands/startproject.py#L29-L31.
@@ -79,13 +95,13 @@ kobo.local
 - name: DJANGO_SECRET_KEY
   valueFrom:
     secretKeyRef:
-      name: {{ .Release.Name }}-enketo
+      name: {{ .Release.Name }}-secrets
       key: djangoSecret
 
 - name: ENKETO_ENCRYPTION_KEY
   valueFrom:
     secretKeyRef:
-      name: {{ .Release.Name }}-enketo
+      name: {{ .Release.Name }}-secrets
       key: encryptionKey
 
 # The initial superuser's username.
@@ -93,7 +109,10 @@ kobo.local
   value: {{ .Values.general.superUser.username | quote }}
 # The initial superuser's password.
 - name: KOBO_SUPERUSER_PASSWORD
-  value: {{ .Values.general.superUser.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: superUserPassword
 
 # The e-mail address where your users can contact you.
 - name: KOBO_SUPPORT_EMAIL
@@ -114,13 +133,19 @@ kobo.local
 - name: MONGO_INITDB_ROOT_USERNAME
   value: root
 - name: MONGO_INITDB_ROOT_PASSWORD
-  value: {{ .Values.mongodb.auth.rootPassword | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: mongoRootPassword
 - name: MONGO_INITDB_DATABASE
   value: {{ .Values.mongodb.auth.database | quote }}
 - name: KOBO_MONGO_USERNAME
   value: {{ .Values.mongodb.auth.username | quote }}
 - name: KOBO_MONGO_PASSWORD
-  value: {{ .Values.mongodb.auth.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: mongoPassword
 
 # No idea why these need to be duplicated...
 - name: KOBOCAT_MONGO_HOST
@@ -132,7 +157,10 @@ kobo.local
 - name: KOBOCAT_MONGO_USER
   value: {{ .Values.mongodb.auth.username | quote }}
 - name: KOBOCAT_MONGO_PASS
-  value: {{ .Values.mongodb.auth.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: mongoPassword
 
 - name: KPI_MONGO_HOST
   value: {{ .Release.Name }}-mongodb
@@ -143,7 +171,10 @@ kobo.local
 - name: KPI_MONGO_USER
   value: {{ .Values.mongodb.auth.username | quote }}
 - name: KPI_MONGO_PASS
-  value: {{ .Values.mongodb.auth.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: mongoPassword
 {{- end -}}
 
 {{- define "env_postgres" -}}
@@ -158,7 +189,10 @@ kobo.local
 - name: POSTGRES_USER
   value: {{ .Values.postgresql.postgresqlUsername | quote }}
 - name: POSTGRES_PASSWORD
-  value: {{ .Values.postgresql.postgresqlPassword | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: postgresPassword
 - name: KC_POSTGRES_DB
   value: {{ .Values.postgresql.kobocatDatabase | quote }}
 - name: KPI_POSTGRES_DB
@@ -166,18 +200,33 @@ kobo.local
 
 # Postgres database used by kpi and kobocat Django apps
 - name: KC_DATABASE_URL
-  value: {{ include "kc_dburl" . | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: kobocatDBURL
 - name: KPI_DATABASE_URL
-  value: {{ include "kpi_dburl" . | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: kpiDBURL
 {{- end -}}
 
 {{- define "env_redis" -}}
 - name: REDIS_SESSION_URL
-  value: "redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/2"
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: redisURLSession
 - name: REDIS_LOCK_URL
-  value: "redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-rediscache-master:6379/3"
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: redisURLLock
 - name: REDIS_PASSWORD
-  value: {{ .Values.global.redis.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: redisPassword
 {{- end -}}
 
 {{- define "env_enketo" -}}
@@ -218,7 +267,10 @@ kobo.local
   value: Express
 
 - name: KOBOCAT_BROKER_URL
-  value: redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-master:6379/2
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: redisURLBroker
 
 - name: KOBOCAT_CELERY_LOG_FILE
   value: /srv/logs/celery.log
@@ -240,13 +292,19 @@ kobo.local
 
 # DATABASE
 - name: DATABASE_URL
-  value: {{ include "kc_dburl" . | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: kobocatDBURL
 - name: POSTGRES_DB
   value: {{ .Values.postgresql.kobocatDatabase | quote }}
 
 # OTHER
 - name: KPI_URL
-  value: {{ include "kpi_url" . | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: kpiDBURL
 - name: KPI_INTERNAL_URL
   value: "http://{{ .Values.kpi.subdomain }}.{{ include "internal_domain" . }}"
 - name: DJANGO_DEBUG
@@ -268,7 +326,10 @@ kobo.local
 - name: KPI_PREFIX
   value: /
 - name: KPI_BROKER_URL
-  value: redis://:{{ .Values.global.redis.password }}@{{ .Release.Name }}-redismain-master:6379/1
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: redisURLKPIBroker
 
 - name: KPI_MONGO_HOST
   value: {{ .Release.Name }}-mongodb
@@ -303,7 +364,10 @@ kobo.local
 
 # DATABASE
 - name: DATABASE_URL
-  value: {{ include "kpi_dburl" . | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: kpiDBURL
 - name: POSTGRES_DB
   value: {{ .Values.postgresql.kpiDatabase | quote }}
 
@@ -328,7 +392,10 @@ kobo.local
 - name: EMAIL_HOST_USER
   value: {{ .Values.smtp.user | quote }}
 - name: EMAIL_HOST_PASSWORD
-  value: {{ .Values.smtp.password | quote }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-secrets
+      key: smtpPassword
 - name: EMAIL_USE_TLS
   value: {{ include "boolean2str" .Values.smtp.tls | quote }}
 - name: DEFAULT_FROM_EMAIL

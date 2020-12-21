@@ -21,9 +21,9 @@ Refer to `values.yaml` for details of all the variables that can be overridden.
 In particular you will need to setup a number of secrets.
 
 ```sh
-echo  > my-values.yaml
 helm install --values my-values.yaml kobo deployment/kobo
 ```
+
 ## References
 
 * [Kobo Toolbox](https://www.kobotoolbox.org/)

@@ -1,13 +1,10 @@
-# Sync Gateway configmap
+# The Enketo conf needs to be a Secret because it includes passwords
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ .Release.Name }}-enketo
   namespace: {{ .Release.Namespace }}
 stringData:
-  apiKey: {{ .Values.enketo.apiKey | quote }}
-  encryptionKey: {{ .Values.enketo.encryptionKey | quote }}
-  djangoSecret: {{ .Values.general.djangoSecret | quote }}
   config.json: |-
     {
       "app name": "Enketo Express for KoBo Toolbox",
