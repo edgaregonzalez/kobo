@@ -30,6 +30,8 @@ enketo:
   lessSecureEncryptionKey: wUNQWPwA3bDVzckKKtS4
 
 general:
+  # The subdomains MUST be reachable since the application will try to call itself at this address
+  # If you don't have a working domain yet, you may use forceInternal below to resolve it to the pod's localhost IP
   externalDomain: example.com
   externalScheme: http
   externalPort: 

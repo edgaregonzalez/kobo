@@ -18,11 +18,21 @@ This is a helm Chart for [Kobo Toolbox](https://www.kobotoolbox.org/).
 
 Refer to `values.yaml` for details of all the variables that can be overridden, and create your own overrides in a separate file, e.g. `my-values.yaml`.
 
-In particular you will need to setup a number of secrets.
+In particular you will need to setup a number of secrets, as well as provide a valid public domain name that the application will be reachable on.
 
-Then, install the helm release as usual
+Then, install the helm release as usual.
 
 ```sh
+# Clone the project
+git clone https://github.com/one-acre-fund/kobo && cd kobo
+
+# Install chart dependencies
+helm dependency update deployment/kobo
+
+# Override desired values in your own override file
+vi my-values.yaml
+
+# Install chart
 helm install --values my-values.yaml kobo deployment/kobo
 ```
 
