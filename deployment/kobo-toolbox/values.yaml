@@ -103,7 +103,7 @@ mongodb:
     username: kobo
     password: kobo
     database: formhub
-  initdbScriptsConfigMap: kobo-mongo-init
+  initdbScriptsConfigMap: '{{ .Release.Name }}-mongo-init'
 
 postgresql:
   enabled: true
@@ -115,8 +115,7 @@ postgresql:
 
   # Standard postgres chart values
   # See https://artifacthub.io/packages/helm/bitnami/postgresql for docs
-  # WARNING! It seems that the migration scripts require the db user to be a superuser... so we're using postgres user here
   postgresqlPostgresPassword: admin
-  postgresqlUsername: postgres
-  postgresqlPassword: admin
-  initdbScriptsConfigMap: kobo-postgres-init
+  postgresqlUsername: kobo
+  postgresqlPassword: kobo
+  initdbScriptsConfigMap: '{{ .Release.Name }}-postgres-init'
