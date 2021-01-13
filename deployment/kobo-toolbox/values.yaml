@@ -103,7 +103,8 @@ mongodb:
     username: kobo
     password: kobo
     database: formhub
-  initdbScriptsConfigMap: '{{ .Release.Name }}-mongo-init'
+  # Warning, this is a static configmap name, it cannot be dynamically named, so will be common across all deployments in the same namespace
+  initdbScriptsConfigMap: "kobo-mongo-init"
 
 postgresql:
   enabled: true
@@ -118,4 +119,4 @@ postgresql:
   postgresqlPostgresPassword: admin
   postgresqlUsername: kobo
   postgresqlPassword: kobo
-  initdbScriptsConfigMap: '{{ .Release.Name }}-postgres-init'
+  initdbScriptsConfigMap: "{{ .Release.Name }}-postgres-init"

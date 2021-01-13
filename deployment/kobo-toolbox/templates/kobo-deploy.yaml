@@ -64,7 +64,6 @@ spec:
 
       # All containers need to be in the same pod since they share volumes!
       # This also means they probably can't be scaled up... (?)
-      # TODO: add some health probes
       containers:
       # Nginx does the host-based routing for all containers
       - name: nginx
@@ -83,6 +82,26 @@ spec:
         - name: persistence
           subPath: kobocat_media_uploads
           mountPath: /media
+        # Somehow I couldn't get these to work:
+        readinessProbe:
+          httpGet:
+            path: /static/img/favicon.ico
+            port: 80
+            httpHeaders:
+            - name: Host
+              value: {{ .Values.kpi.subdomain }}.{{ include "internal_domain" . }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 15
+        livenessProbe:
+          httpGet:
+            path: /static/img/favicon.ico
+            port: 80
+            httpHeaders:
+            - name: Host
+              value: {{ .Values.kpi.subdomain }}.{{ include "internal_domain" . }}
+          initialDelaySeconds: 60
+          periodSeconds: 5
 
       # Kobocat is the forms API server that Enketo / Collect will connect to
       - name: kobocat
@@ -130,6 +149,16 @@ spec:
         - name: persistence
           subPath: static/kobocat
           mountPath: /srv/static
+        readinessProbe:
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 5
 
       # KPI is the main User Interface and admin API
       - name: kpi
@@ -206,6 +235,16 @@ spec:
           subPath: signup_photo.jpg
           readOnly: true
         {{- end }}
+        readinessProbe:
+          tcpSocket:
+            port: 8003
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 8003
+          initialDelaySeconds: 30
+          periodSeconds: 5
 
       # Enketo is the web-based form viewer
       - name: enketo
@@ -242,6 +281,19 @@ spec:
         env:
         - name: ENKETO_BUILD_IE11
           value: 'true'
+        # This one is REALLY slow to come up since we rebuild the entire webapp at startup...
+        # It's probably best to not have a readiness probe, as this would delay the termination of older pods
+        # readinessProbe:
+        #   tcpSocket:
+        #     port: 8005
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 30
+        #   failureThreshold: 15
+        livenessProbe:
+          tcpSocket:
+            port: 8005
+          initialDelaySeconds: 600
+          periodSeconds: 5
 
       volumes:
       - name: nginx-confd

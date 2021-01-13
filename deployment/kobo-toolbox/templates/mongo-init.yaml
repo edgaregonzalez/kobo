@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-mongo-init
+  name: kobo-mongo-init
   namespace: {{ .Release.Namespace }}
 data:
   index.js: |
